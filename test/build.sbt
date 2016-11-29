@@ -14,4 +14,5 @@ libraryDependencies ++= Seq(
   "org.apache.flink" %% "flink-streaming-scala" % flinkV,
   "org.apache.flink" %% "flink-clients" % flinkV,
   "org.apache.flink" %% "flink-connector-kafka-0.9" % flinkV,
-  "org.json4s" %% "json4s-native" % "3.5.0")
+  "org.json4s" %% "json4s-native" % "3.5.0",
+  "joda-time" % "joda-time" % "2.9.6")

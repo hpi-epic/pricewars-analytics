@@ -11,7 +11,7 @@ import org.json4s.native.JsonMethods._
 /**
   * Created by Jan on 22.11.2016.
   */
-case class SalesEntry(offer_id: Long, amount: Long, price: BigDecimal, timestamp: String)
+case class SalesEntry(offer_id: Long, amount: Long, price: BigDecimal, http_code: Int, timestamp: String)
 
 object SalesEntrySchema extends AbstractDeserializationSchema[SalesEntry] {
   override def deserialize(message: Array[Byte]): SalesEntry = {
