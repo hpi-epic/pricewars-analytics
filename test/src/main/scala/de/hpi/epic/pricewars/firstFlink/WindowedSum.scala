@@ -37,7 +37,7 @@ object WindowedSum {
     val s2 = s1.keyBy(0)
     val s3 = s2.timeWindow(Time.minutes(1), Time.seconds(30))
     val s4 = s3.sum(1)
-    val s5 = s4.map(e => s"""{"offer_id": ${e._1}, "amount": ${e._2}, "timestamp": ${new DateTime()}""")
+    val s5 = s4.map(e => s"""{"offer_id": ${e._1}, "amount": ${e._2}, "timestamp": ${new DateTime()}}""")
     s5.addSink(new FlinkKafkaProducer09[String](kafkaURL, "SalesPerMinutes", new SimpleStringSchema()))
     s5.print()
 
