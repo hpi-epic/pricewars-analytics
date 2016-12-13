@@ -31,7 +31,7 @@ object MerchantStatistics {
 
     val expensesStream = newProductStream.map(e => (e.merchant_id, e.amount * e.price * -1)).keyBy(0)
     val earningsStream = buyOfferStream.filter(e => e.http_code == 200).map(e => (e.merchant_id, e.amount * e.price))
-    val revenueStream = expensesStream.union(earningsStream)
+    expensesStream.union(earningsStream)
                                       .keyBy(0)
                                       .window(GlobalWindows.create())
                                       .trigger(ContinuousProcessingTimeTrigger.of(Time.minutes(1)))

@@ -22,5 +22,7 @@ lazy val marketshare = (project in file(".")).settings(
     "org.json4s" %% "json4s-native" % versions.json,
     "org.json4s" %% "json4s-jackson" % versions.json,
     "joda-time" % "joda-time" % versions.jodaTime,
-    "org.json4s" %% "json4s-ext" % versions.json)
+    "org.json4s" %% "json4s-ext" % versions.json,
+    "org.scalactic" %% "scalactic" % "3.0.1",
+    "org.scalatest" %% "scalatest" % "3.0.1" % "test")
 ).dependsOn(`pricewars-utils`)
