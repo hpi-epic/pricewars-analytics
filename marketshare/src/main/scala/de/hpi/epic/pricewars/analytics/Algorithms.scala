@@ -18,7 +18,7 @@ object Algorithms {
                             amountCalculation: T => Double = (e:T) => e.amount.toDouble): DataStream[MarketshareEntry] = {
     val windowedStream = dataStream.windowAll(GlobalWindows.create())
     val triggeredStream = windowedStream.trigger(ContinuousProcessingTimeTrigger.of(time))
-    val aggregatedStream = triggeredStream.fold(Map.empty[ID, Double])((p, c) => {
+    val aggregatedStream = triggeredStream.fold(Map.empty[Token, Double])((p, c) => {
       p.get(c.merchant_id) match {
         case Some(value) => p + (c.merchant_id -> (value + amountCalculation(c)))
         case None => p + (c.merchant_id -> amountCalculation(c))
@@ -34,7 +34,7 @@ object Algorithms {
   def intervallMarketshare[T <: MarketshareInputT](dataStream: DataStream[T], time: Time = Time.minutes(1),
                            amountCalculation: T => Double = (e:T) => e.amount.toDouble): DataStream[MarketshareEntry] = {
     val windowedStream = dataStream.timeWindowAll(time)
-    val aggregatedStream = windowedStream.fold(Map.empty[ID, Double])((p,c) => {
+    val aggregatedStream = windowedStream.fold(Map.empty[Token, Double])((p,c) => {
       p.get(c.merchant_id) match {
         case Some(value) => p + (c.merchant_id -> (value + amountCalculation(c)))
         case None => p + (c.merchant_id -> amountCalculation(c))

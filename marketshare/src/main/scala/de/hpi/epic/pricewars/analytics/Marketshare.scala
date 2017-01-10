@@ -43,73 +43,47 @@ object Marketshare {
       MarketshareInputEntry.from
     )
 
-    setupAmountBased(filteredBuyOfferStream)
-    setupTurnoverBased(filteredBuyOfferStream)
-    setupRevenueStream(mergedStream)
+    val intervals = Seq(
+      ("", Time.minutes(1)),
+      ("Hourly", Time.hours(1)),
+      ("Daily", Time.days(1))
+    )
+
+    setupCumulativeMarketShare(filteredBuyOfferStream, "amount", intervals)
+    setupCumulativeMarketShare[BuyOfferEntry](filteredBuyOfferStream, "turnover", intervals, Some((e) => (e.amount * e.price).toDouble))
+    setupCumulativeMarketShare(mergedStream, "revenue", intervals)
 
     env.execute()
   }
 
-  def setupAmountBased(stream: DataStream[BuyOfferEntry]): Unit = {
-    val amountStream = kumulativeMarketshare(stream, Time.minutes(1))
-    amountStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      config.getString("kafka.marketshare.topic.target.amount"),
-      MarketshareEntrySchema
-    ))
-
-    val amountStreamHourly = kumulativeMarketshare(stream, Time.hours(1))
-    amountStreamHourly.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      s"${config.getString("kafka.marketshare.topic.target.amount")}Hourly",
-      MarketshareEntrySchema
-    ))
-
-    val amountStreamDaily = kumulativeMarketshare(stream, Time.days(1))
-    amountStreamDaily.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      s"${config.getString("kafka.marketshare.topic.target.amount")}Daily",
-      MarketshareEntrySchema
-    ))
+  def setupCumulativeMarketShare[T <: MarketshareInputT](stream: DataStream[T], topic: String,
+                                                         intervals: Seq[(String, Time)],
+                                                         amountCalculation: Option[T => Double] = None): Unit = {
+    intervals.foreach(t => {
+      val (extension, time) = t
+      val marketShareStream =
+        if (amountCalculation.isDefined) kumulativeMarketshare[T](stream, time, amountCalculation.get)
+        else kumulativeMarketshare(stream, time)
+      marketShareStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
+        config.getString("kafka.bootstrap.servers"),
+        config.getString("kafka.marketshare.topic.target.cumulative." + topic) + extension,
+        MarketshareEntrySchema
+      ))
+    })
   }
 
-  def setupTurnoverBased(stream: DataStream[BuyOfferEntry]) = {
-    val turnoverStream = kumulativeMarketshare[BuyOfferEntry](stream, Time.minutes(1),(sale) => {(sale.amount * sale.price).toDouble})
-    turnoverStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      config.getString("kafka.marketshare.topic.target.turnover"),
-      MarketshareEntrySchema))
-
-    val turnoverStreamHourly = kumulativeMarketshare[BuyOfferEntry](stream, Time.hours(1), (sale) => {(sale.amount * sale.price).toDouble})
-    turnoverStreamHourly.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      s"${config.getString("kafka.marketshare.topic.target.turnover")}Hourly",
-      MarketshareEntrySchema))
-
-    val turnoverStreamDaily = kumulativeMarketshare[BuyOfferEntry](stream, Time.days(1), (sale) => {(sale.amount * sale.price).toDouble})
-    turnoverStreamDaily.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      s"${config.getString("kafka.marketshare.topic.target.turnover")}Daily",
-      MarketshareEntrySchema))
-  }
-
-  def setupRevenueStream(stream: DataStream[MarketshareInputEntry]) = {
-    val revenueStream = kumulativeMarketshare(stream, Time.minutes(1))
-    revenueStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      config.getString("kafka.marketshare.topic.target.revenue"),
-      MarketshareEntrySchema))
-
-    val revenueStreamHourly = kumulativeMarketshare(stream, Time.hours(1))
-    revenueStreamHourly.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      s"${config.getString("kafka.marketshare.topic.target.revenue")}Hourly",
-      MarketshareEntrySchema))
-
-    val revenueStreamDaily = kumulativeMarketshare(stream, Time.days(1))
-    revenueStreamDaily.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-      config.getString("kafka.bootstrap.servers"),
-      s"${config.getString("kafka.marketshare.topic.target.revenue")}Daily",
-      MarketshareEntrySchema))
+  def setupIntervalMarketShare[T <: MarketshareInputT](stream: DataStream[T], topic: String, intervals: Seq[(String, Time)],
+                                                       amountCalculation: Option[T => Double] = None): Unit = {
+    intervals.foreach(t => {
+      val (extension, time) = t
+      val marketShareStream =
+        if (amountCalculation.isDefined) intervallMarketshare[T](stream, time, amountCalculation.get)
+        else intervallMarketshare(stream, time)
+      marketShareStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
+        config.getString("kafka.bootstrap.servers"),
+        config.getString("kafka.marketshare.topic.target.interval." + topic) + extension,
+        MarketshareEntrySchema
+      ))
+    })
   }
 }
