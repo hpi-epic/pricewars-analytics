@@ -36,7 +36,7 @@ object MerchantStatistics {
                                       .window(GlobalWindows.create())
                                       .trigger(ContinuousProcessingTimeTrigger.of(Time.minutes(1)))
                                       .reduce((t1, t2) => (t1._1, t1._2 + t2._2))
-                                      .map(e => s"""{"merchant_id": ${e._1}, "revenue": ${e._2}, "timestamp": "${new DateTime()}"}""")
+                                      .map(e => s"""{"merchant_id": "${e._1}", "revenue": ${e._2}, "timestamp": "${new DateTime()}"}""")
                                       .addSink(new FlinkKafkaProducer09("vm-mpws2016hp1-05.eaalab.hpi.uni-potsdam.de:9092",
                                       "revenue", new SimpleStringSchema))
 
