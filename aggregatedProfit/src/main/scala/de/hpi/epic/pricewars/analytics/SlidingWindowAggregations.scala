@@ -10,6 +10,7 @@ import marketplace.BuyOfferEntry
 import producer.NewProductEntry
 import de.hpi.epic.pricewars.logging.flink.RevenueEntry._
 import de.hpi.epic.pricewars.logging.flink.ExpensesEntry._
+import de.hpi.epic.pricewars.logging.flink.RevenueEntry
 
 /**
   * Created by Jan on 29.11.2016.
@@ -34,12 +35,20 @@ object SlidingWindowAggregations {
     //log every 10 seconds profit of last 60 seconds
     ProfitStream(buyOfferStream, newProductStream, Time.minutes(1), Time.seconds(10))
       .addSink(new FlinkKafkaProducer09(kafkaUrl, config.getString("kafka.topic.target.profitPerMinute"), ProfitEntrySchema))
-      .name("profit per minute stream")
+      .name("profit per minute")
 
     //log every 1 minute profit of the last hour
     ProfitStream(buyOfferStream, newProductStream, Time.hours(1), Time.minutes(1))
       .addSink(new FlinkKafkaProducer09(kafkaUrl, config.getString("kafka.topic.target.profitPerHour"), ProfitEntrySchema))
-      .name("profit per hour stream")
+      .name("profit per hour")
+
+    RevenueStream(buyOfferStream, Time.minutes(1), Time.seconds(10))
+      .addSink(new FlinkKafkaProducer09(kafkaUrl, config.getString("kafka.topic.target.revenuePerMinute"), RevenueEntrySchema))
+      .name("revenue per minute")
+
+    RevenueStream(buyOfferStream, Time.hours(1), Time.minutes(1))
+      .addSink(new FlinkKafkaProducer09(kafkaUrl, config.getString("kafka.topic.target.revenuePerHour"), RevenueEntrySchema))
+      .name("revenue per minute")
 
     env.execute()
   }

@@ -72,13 +72,15 @@ object ProfitStream {
   private def profitImpl(revenueStream: DataStream[ProfitEntry], expensesStream: DataStream[ProfitEntry],
                          windowSize: Time, windowSlide: Time): DataStream[ProfitEntry] = {
     implicit val typeInfo = TypeInformation.of(classOf[Token])
+    implicit val revenueEntryInfo = TypeInformation.of(classOf[ProfitEntry])
     val profitStream =
       revenueStream.union(expensesStream)
         .keyBy(_.merchant_id)
 
     profitStream.window(SlidingProcessingTimeWindows.of(windowSize, windowSlide))
-        .reduce((t1, t2) => {
-          new ProfitEntry(t1.merchant_id, t1.value + t2.value, new DateTime())
-        })
+      .reduce((t1, t2) => {
+        new ProfitEntry(t1.merchant_id, t1.value + t2.value, t1.timestamp)
+      })
+      .map(_.copy(timestamp = new DateTime()))
   }
 }
