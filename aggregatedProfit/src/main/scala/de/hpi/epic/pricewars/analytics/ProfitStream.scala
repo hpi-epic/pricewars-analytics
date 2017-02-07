@@ -1,19 +1,21 @@
 package de.hpi.epic.pricewars.analytics
 
-import de.hpi.epic.pricewars.types.{Currency, Timestamp, Token}
-import de.hpi.epic.pricewars.logging.base.{MerchantIDEntry, TimestampEntry, ValueEntry}
-import de.hpi.epic.pricewars.logging.flink.{ExpensesEntry, ProfitEntry, RevenueEntry}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.DataStream
 import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.joda.time.DateTime
 
+import de.hpi.epic.pricewars.types.{Currency, Timestamp, Token}
+import de.hpi.epic.pricewars.logging.base.{MerchantIDEntry, TimestampEntry, ValueEntry}
+import de.hpi.epic.pricewars.logging.flink.{ExpensesEntry, ProfitEntry, RevenueEntry}
+
 /**
   * Created by Jan on 31.01.2017.
   */
 object ProfitStream {
   type EntryT = MerchantIDEntry with ValueEntry[Currency] with TimestampEntry
+  private implicit val profitEntryTypeInfo = TypeInformation.of(classOf[ProfitEntry])
 
   /**
     * This function is used to translate an arbitrary stream to a stream consisting of profit entries.
@@ -32,7 +34,6 @@ object ProfitStream {
     * @return returns a stream that contains elements of type ProfitEntry
     */
   private def conv[A,B <: EntryT](in: DataStream[A])(implicit ev: A => B): DataStream[ProfitEntry] = {
-    implicit val typeInfo = TypeInformation.of(classOf[ProfitEntry])
     in.map(t => ProfitEntry.from(ev(t)))
   }
 
@@ -72,7 +73,6 @@ object ProfitStream {
   private def profitImpl(revenueStream: DataStream[ProfitEntry], expensesStream: DataStream[ProfitEntry],
                          windowSize: Time, windowSlide: Time): DataStream[ProfitEntry] = {
     implicit val typeInfo = TypeInformation.of(classOf[Token])
-    implicit val revenueEntryInfo = TypeInformation.of(classOf[ProfitEntry])
     val profitStream =
       revenueStream.union(expensesStream)
         .keyBy(_.merchant_id)
