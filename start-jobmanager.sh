@@ -2,6 +2,9 @@
 
 /opt/flink/bin/docker-entrypoint.sh jobmanager &
 
+# Getting the process and waiting for it to ensure the container will stay up
+PID_JOBMANAGER=$!
+
 /analytics/wait-for-it.sh flink-jobmanager:6123 -t 0
 
 for file in /analytics/*; do
@@ -11,3 +14,5 @@ for file in /analytics/*; do
         /opt/flink/bin/flink run -d $file
     fi
 done
+
+wait $PID_JOBMANAGER
