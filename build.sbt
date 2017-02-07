@@ -18,7 +18,7 @@ lazy val flinkUtils = (project in file("flinkUtils")).settings(
     "org.json4s" %% "json4s-jackson" % versions.json,
     "joda-time" % "joda-time" % versions.jodaTime,
     "org.json4s" %% "json4s-ext" % versions.json,
-    "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided"),
+    "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided")
 ).dependsOn(`pricewars-utils`)
 
 lazy val cumulativeProfit = (project in file("cumulativeProfit")).settings(
@@ -30,7 +30,8 @@ lazy val cumulativeProfit = (project in file("cumulativeProfit")).settings(
     "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided",
     "org.apache.flink" %% "flink-connector-kafka-0.9" % versions.flink
   ),
-  assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
+  assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
+  assemblyOutputPath in assembly := file(s"./target/jars/${name.value}.jar")
 ).dependsOn(flinkUtils)
 
 lazy val cumulativeMarketShare = (project in file("cumulativeMarketShare")).settings(
@@ -42,7 +43,8 @@ lazy val cumulativeMarketShare = (project in file("cumulativeMarketShare")).sett
     "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided",
     "org.apache.flink" %% "flink-connector-kafka-0.9" % versions.flink
   ),
-  assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
+  assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
+  assemblyOutputPath in assembly := file(s"./target/jars/${name.value}.jar")
 ).dependsOn(flinkUtils)
 
 lazy val aggregatedProfit = (project in file("aggregatedProfit")).settings(
