@@ -25,15 +25,7 @@ object MerchantStatistics {
 
     val config = ConfigFactory.load
     val properties = propsFromConfig(config.getConfig("kafka"))
-    //Workaround for docker
-    val parameter = ParameterTool.fromArgs(args)
-    val kafkaUrl = if (parameter.has("kafka")) {
-      val tmp = parameter.get("kafka")
-      properties.setProperty("bootstrap.servers", tmp)
-      tmp
-    } else {
-      config.getString("kafka.bootstrap.servers")
-    }
+    val kafkaUrl = config.getString("kafka.bootstrap.servers")
 
     val newProductStream = env.addSource(
       new FlinkKafkaConsumer09[NewProductEntry](
