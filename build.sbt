@@ -18,7 +18,7 @@ lazy val flinkUtils = (project in file("flinkUtils")).settings(
     "org.json4s" %% "json4s-jackson" % versions.json,
     "joda-time" % "joda-time" % versions.jodaTime,
     "org.json4s" %% "json4s-ext" % versions.json,
-    "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided")
+    "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided"),
 ).dependsOn(`pricewars-utils`)
 
 lazy val cumulativeProfit = (project in file("cumulativeProfit")).settings(
@@ -52,5 +52,6 @@ lazy val aggregatedProfit = (project in file("aggregatedProfit")).settings(
   libraryDependencies ++= Seq(
     "org.apache.flink" %% "flink-scala" % versions.flink % "provided",
     "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided",
-    "org.apache.flink" %% "flink-connector-kafka-0.9" % versions.flink)
+    "org.apache.flink" %% "flink-connector-kafka-0.9" % versions.flink),
+  assemblyOutputPath in assembly := file(s"./target/jars/${name.value}.jar")
 ).dependsOn(flinkUtils)
