@@ -11,6 +11,7 @@ import producer.NewProductEntry
 import de.hpi.epic.pricewars.logging.flink.RevenueEntry._
 import de.hpi.epic.pricewars.logging.flink.ExpensesEntry._
 import de.hpi.epic.pricewars.logging.flink.RevenueEntry
+import org.apache.flink.api.java.utils.ParameterTool
 
 /**
   * Created by Jan on 29.11.2016.
@@ -23,6 +24,9 @@ object SlidingWindowAggregations {
 
     val properties = propsFromConfig(config.getConfig("kafka"))
     val kafkaUrl = config.getString("kafka.bootstrap.servers")
+
+    val parameter = ParameterTool.fromSystemProperties();
+    if (parameter.has("bootstrap.servers")) properties.setProperty("bootstrap.servers", parameter.get("bootstrap.servers"))
 
     val newProductStream = env.addSource(new FlinkKafkaConsumer09[NewProductEntry](
       config.getString("kafka.topic.source.produce"), NewProductEntrySchema, properties
