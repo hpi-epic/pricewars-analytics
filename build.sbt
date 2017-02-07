@@ -1,5 +1,5 @@
 lazy val root = ( project in file(".") )
-   .aggregate(`pricewars-utils`, flinkUtils, merchantStatistics, marketshare, aggregatedProfit)
+   .aggregate(`pricewars-utils`, flinkUtils, aggregatedProfit, cumulativeProfit, cumulativeMarketShare)
 
 lazy val `pricewars-utils` = project in file("utils")
 
@@ -21,11 +21,29 @@ lazy val flinkUtils = (project in file("flinkUtils")).settings(
     "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided")
 ).dependsOn(`pricewars-utils`)
 
-lazy val merchantStatistics = (project in file("merchantStatistics"))
-    .dependsOn(`pricewars-utils`)
+lazy val cumulativeProfit = (project in file("cumulativeProfit")).settings(
+  name := "cumulativeProfit",
+  version := "1.0",
+  scalaVersion := "2.11.8",
+  libraryDependencies ++= Seq(
+    "org.apache.flink" %% "flink-scala" % versions.flink % "provided",
+    "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided",
+    "org.apache.flink" %% "flink-connector-kafka-0.9" % versions.flink
+  ),
+  assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
+).dependsOn(flinkUtils)
 
-lazy val marketshare = (project in file("marketshare"))
-    .dependsOn(`pricewars-utils`)
+lazy val cumulativeMarketShare = (project in file("cumulativeMarketShare")).settings(
+  name := "cumulativeMarketShare",
+  version := "1.0",
+  scalaVersion := "2.11.8",
+  libraryDependencies ++= Seq(
+    "org.apache.flink" %% "flink-scala" % versions.flink % "provided",
+    "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided",
+    "org.apache.flink" %% "flink-connector-kafka-0.9" % versions.flink
+  ),
+  assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
+).dependsOn(flinkUtils)
 
 lazy val aggregatedProfit = (project in file("aggregatedProfit")).settings(
   name := "aggregatedProfit",

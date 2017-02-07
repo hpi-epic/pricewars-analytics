@@ -50,6 +50,6 @@ object SlidingWindowAggregations {
       .addSink(new FlinkKafkaProducer09(kafkaUrl, config.getString("kafka.topic.target.revenuePerHour"), RevenueEntrySchema))
       .name("revenue per minute")
 
-    env.execute()
+    env.execute("Sliding Window Profit & Revenue Aggregation")
   }
 }
