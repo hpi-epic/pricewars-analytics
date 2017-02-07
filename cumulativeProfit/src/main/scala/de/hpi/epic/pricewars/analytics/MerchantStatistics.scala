@@ -9,6 +9,7 @@ import de.hpi.epic.pricewars.config._
 import de.hpi.epic.pricewars.logging.{BuyOfferEntrySchema, NewProductEntrySchema}
 import de.hpi.epic.pricewars.logging.marketplace.BuyOfferEntry
 import de.hpi.epic.pricewars.logging.producer.NewProductEntry
+import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.ContinuousProcessingTimeTrigger
@@ -24,6 +25,15 @@ object MerchantStatistics {
 
     val config = ConfigFactory.load
     val properties = propsFromConfig(config.getConfig("kafka"))
+    //Workaround for docker
+    val parameter = ParameterTool.fromArgs(args)
+    val kafkaUrl = if (parameter.has("kafka")) {
+      val tmp = parameter.get("kafka")
+      properties.setProperty("bootstrap.servers", tmp)
+      tmp
+    } else {
+      config.getString("kafka.bootstrap.servers")
+    }
 
     val newProductStream = env.addSource(
       new FlinkKafkaConsumer09[NewProductEntry](
@@ -47,7 +57,7 @@ object MerchantStatistics {
                                       .reduce((t1, t2) => (t1._1, t1._2 + t2._2))
                                       .map(e => s"""{"merchant_id": "${e._1}", "revenue": ${e._2}, "timestamp": "${new DateTime()}"}""")
                                       .addSink(new FlinkKafkaProducer09(
-                                        config.getString("kafka.bootstrap.servers"),
+                                        kafkaUrl,
                                         config.getString("kafka.cumulativeProfit.topic.target"),
                                         new SimpleStringSchema
                                       ))

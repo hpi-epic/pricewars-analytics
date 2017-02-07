@@ -10,7 +10,6 @@ import marketplace.BuyOfferEntry
 import producer.NewProductEntry
 import de.hpi.epic.pricewars.logging.flink.RevenueEntry._
 import de.hpi.epic.pricewars.logging.flink.ExpensesEntry._
-import de.hpi.epic.pricewars.logging.flink.RevenueEntry
 import org.apache.flink.api.java.utils.ParameterTool
 
 /**
@@ -23,10 +22,15 @@ object SlidingWindowAggregations {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
     val properties = propsFromConfig(config.getConfig("kafka"))
-    val kafkaUrl = config.getString("kafka.bootstrap.servers")
-
-    val parameter = ParameterTool.fromSystemProperties();
-    if (parameter.has("bootstrap.servers")) properties.setProperty("bootstrap.servers", parameter.get("bootstrap.servers"))
+    //Workaround for docker
+    val parameter = ParameterTool.fromArgs(args)
+    val kafkaUrl = if (parameter.has("kafka")) {
+      val tmp = parameter.get("kafka")
+      properties.setProperty("bootstrap.servers", tmp)
+      tmp
+    } else {
+      config.getString("kafka.bootstrap.servers")
+    }
 
     val newProductStream = env.addSource(new FlinkKafkaConsumer09[NewProductEntry](
       config.getString("kafka.topic.source.produce"), NewProductEntrySchema, properties
