@@ -1,7 +1,6 @@
 #!/bin/bash
-/opt/flink/bin/flink run /var/pricewars/
 
-for file in *; do
+for file in /analytics/*; do
     if [ "${file}" != "${file%.jar}" ];then
         echo "Adding $file as flink job..."
         /opt/flink/bin/flink run -d $file
