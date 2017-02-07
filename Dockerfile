@@ -15,6 +15,7 @@ RUN sbt update
 ADD . $APP_HOME
 
 RUN mkdir -p target/jars
+RUN mv -f wait-for-it.sh target/jars/wait-for-it.sh
 RUN mv -f start-jobmanager.sh target/jars/start-jobmanager.sh
 
 RUN sbt assembly
