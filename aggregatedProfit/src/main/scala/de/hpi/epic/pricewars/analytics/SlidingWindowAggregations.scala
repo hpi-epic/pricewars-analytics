@@ -24,10 +24,10 @@ object SlidingWindowAggregations {
     val properties = propsFromConfig(config.getConfig("kafka"))
     //Workaround for docker
     val parameter = ParameterTool.fromArgs(args)
-    val kafkaUrl = if (parameter.has("kafka")) {
-      val tmp = parameter.get("kafka")
-      properties.setProperty("bootstrap.servers", tmp)
-      tmp
+    val kafkaUrlFromSysEnv = System.getenv("KAFKA_URL")
+    val kafkaUrl = if (kafkaUrlFromSysEnv != null && kafkaUrlFromSysEnv != "") {
+      properties.setProperty("bootstrap.servers", kafkaUrlFromSysEnv)
+      kafkaUrlFromSysEnv
     } else {
       config.getString("kafka.bootstrap.servers")
     }
