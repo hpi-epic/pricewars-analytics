@@ -6,7 +6,7 @@
 PID_JOBMANAGER=$!
 
 /analytics/wait-for-it.sh flink-jobmanager:6123 -t 0
-/analytics/wait-for-it.sh flink-taskmanager:43725 -t 0
+/analytics/wait-for-it.sh flink-taskmanager:6121 -t 0
 
 for file in /analytics/*; do
     if [ "${file}" != "${file%.jar}" ];then
