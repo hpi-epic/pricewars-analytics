@@ -11,7 +11,6 @@ PID_JOBMANAGER=$!
 for file in /analytics/*; do
     if [ "${file}" != "${file%.jar}" ];then
         echo "Adding $file as flink job..."
-        sleep 5
         /opt/flink/bin/flink run -d $file
     fi
 done
