@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkKafkaProducer09}
 import de.hpi.epic.pricewars.logging.{BuyOfferEntrySchema, MarketShareEntrySchema, NewProductEntrySchema}
 import de.hpi.epic.pricewars.logging.marketplace.{BuyOfferEntry, MarketshareEntry}
-import de.hpi.epic.pricewars.config.propsFromConfig
+import de.hpi.epic.pricewars.config._
 import de.hpi.epic.pricewars.analytics.Algorithms._
 import de.hpi.epic.pricewars.logging.flink.MarketshareInputEntry
 import de.hpi.epic.pricewars.logging.producer.NewProductEntry
@@ -16,24 +16,24 @@ import de.hpi.epic.pricewars.logging.producer.NewProductEntry
   */
 object MarketShare {
   val config = ConfigFactory.load
+  val properties = propsFromConfig(config.getConfig("kafka.cluster"))
+  val clientIdPrefix = config.getString("kafka.clientId.prefix")
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
-    val properties = propsFromConfig(config.getConfig("kafka"))
-
     val buyOfferStream = env.addSource(
       new FlinkKafkaConsumer09[BuyOfferEntry](
-        config.getString("kafka.marketshare.topic.source.buy"),
+        config.getString("kafka.topic.source.buy"),
         BuyOfferEntrySchema,
-        properties
+        properties withClientId clientIdPrefix
       ))
 
     val producedProductStream = env.addSource(
       new FlinkKafkaConsumer09[NewProductEntry](
-        config.getString("kafka.marketshare.topic.source.produce"),
+        config.getString("kafka.topic.source.produce"),
         NewProductEntrySchema,
-        properties
+        properties withClientId clientIdPrefix
       )
     )
 
@@ -65,9 +65,9 @@ object MarketShare {
         if (amountCalculation.isDefined) kumulativeMarketshare[T](stream, time, amountCalculation.get)
         else kumulativeMarketshare(stream, time)
       marketShareStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-        config.getString("kafka.bootstrap.servers"),
-        config.getString("kafka.marketshare.topic.target.cumulative." + topic) + extension,
-        MarketShareEntrySchema
+        config.getString("kafka.topic.target.cumulative." + topic) + extension,
+        MarketShareEntrySchema,
+        properties withClientId clientIdPrefix
       ))
     })
   }
@@ -80,9 +80,9 @@ object MarketShare {
         if (amountCalculation.isDefined) intervallMarketshare[T](stream, time, amountCalculation.get)
         else intervallMarketshare(stream, time)
       marketShareStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-        config.getString("kafka.bootstrap.servers"),
-        config.getString("kafka.marketshare.topic.target.interval." + topic) + extension,
-        MarketShareEntrySchema
+        config.getString("kafka.topic.target.interval." + topic) + extension,
+        MarketShareEntrySchema,
+        properties withClientId clientIdPrefix
       ))
     })
   }

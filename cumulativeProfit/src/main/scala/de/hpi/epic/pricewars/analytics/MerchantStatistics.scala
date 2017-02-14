@@ -24,20 +24,20 @@ object MerchantStatistics {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
     val config = ConfigFactory.load
-    val properties = propsFromConfig(config.getConfig("kafka"))
-    val kafkaUrl = config.getString("kafka.bootstrap.servers")
+    val properties = propsFromConfig(config.getConfig("kafka.cluster"))
+    val clientIdPrefix = config.getString("kafka.clientId.prefix")
 
     val newProductStream = env.addSource(
       new FlinkKafkaConsumer09[NewProductEntry](
-        config.getString("kafka.cumulativeProfit.topic.source.produce"),
+        config.getString("kafka.topic.source.produce"),
         NewProductEntrySchema,
-        properties
+        properties withClientId clientIdPrefix
       ))
     val buyOfferStream = env.addSource(
       new FlinkKafkaConsumer09[BuyOfferEntry](
-        config.getString("kafka.cumulativeProfit.topic.source.buy"),
+        config.getString("kafka.topic.source.buy"),
         BuyOfferEntrySchema,
-        properties
+        properties withClientId clientIdPrefix
       ))
 
     val expensesStream = newProductStream.map(e => (e.merchant_id, e.amount * e.price * -1)).keyBy(0)
@@ -49,9 +49,9 @@ object MerchantStatistics {
                                       .reduce((t1, t2) => (t1._1, t1._2 + t2._2))
                                       .map(e => s"""{"merchant_id": "${e._1}", "revenue": ${e._2}, "timestamp": "${new DateTime()}"}""")
                                       .addSink(new FlinkKafkaProducer09(
-                                        kafkaUrl,
-                                        config.getString("kafka.cumulativeProfit.topic.target"),
-                                        new SimpleStringSchema
+                                        config.getString("kafka.topic.target"),
+                                        new SimpleStringSchema,
+                                        properties withClientId clientIdPrefix
                                       ))
 
     env.execute()
