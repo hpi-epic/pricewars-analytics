@@ -16,7 +16,6 @@ object MarketShareEntrySchema extends AbstractDeserializationSchema[MarketshareE
   override def serialize(element: MarketshareEntry): Array[Byte] = {
     implicit def formats: Formats = org.json4s.DefaultFormats + MyDateTimeSerializer
     val json = write(element)
-    println(json)
     json.getBytes
   }
 }
