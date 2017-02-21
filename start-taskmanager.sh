@@ -2,6 +2,9 @@
 
 /analytics/wait-for-it.sh flink-jobmanager:6123 -t 0
 
+# Edit config file to suppress INFO messages on console
+find /opt/flink/conf -type f -exec sed -i "s/INFO, console/WARN, console/g" {} \;
+
 /opt/flink/bin/docker-entrypoint.sh taskmanager &
 
 # Getting the process and waiting for it to ensure the container will stay up
