@@ -32,7 +32,7 @@ object SlidingWindowAggregations {
       config.getString("kafka.topic.source.buy"), BuyOfferEntrySchema, properties withClientId clientIdPrefix
     )).filter(_.http_code == 200).name("marketplace stream")
 
-    //log every 10 seconds profit of last 60 seconds
+    //log every 10 seconds profit [basically: amount * (selling_price - purchase_price)] of last 60 seconds
     ProfitStream(buyOfferStream, newProductStream, Time.minutes(1), Time.seconds(10))
       .addSink(new FlinkKafkaProducer09(config.getString("kafka.topic.target.profitPerMinute"),ProfitEntrySchema,properties withClientId clientIdPrefix))
       .name("profit per minute")
@@ -42,10 +42,12 @@ object SlidingWindowAggregations {
       .addSink(new FlinkKafkaProducer09(config.getString("kafka.topic.target.profitPerHour"), ProfitEntrySchema, properties withClientId clientIdPrefix))
       .name("profit per hour")
 
+    //log every 10 seconds revenue [basically: amount * selling_price] of last 60 seconds
     RevenueStream(buyOfferStream, Time.minutes(1), Time.seconds(10))
       .addSink(new FlinkKafkaProducer09(config.getString("kafka.topic.target.revenuePerMinute"), RevenueEntrySchema, properties withClientId clientIdPrefix))
       .name("revenue per minute")
 
+    //log every minute revenue of the last hour
     RevenueStream(buyOfferStream, Time.hours(1), Time.minutes(1))
       .addSink(new FlinkKafkaProducer09(config.getString("kafka.topic.target.revenuePerHour"), RevenueEntrySchema, properties withClientId clientIdPrefix))
       .name("revenue per minute")

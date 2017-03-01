@@ -54,6 +54,6 @@ object MerchantStatistics {
                                         properties withClientId clientIdPrefix
                                       ))
 
-    env.execute()
+    env.execute("Cumulative aggregation of profit")
   }
 }
