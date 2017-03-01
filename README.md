@@ -51,6 +51,7 @@ Sbt will fetch the required Scala version and necessary dependencies automatical
 
 Before compiling the services, you might need to adapt some of their settings, i.e. the url of the KAFKA log.
 To do this, you can update the `application.conf` files in the `resources/` folder of each service's project path.
+When wanted, the conf file allows to prefer specific environment variables by overriding the same config key with `${?ENV_VAR_NAME}`.
 
 The next step is to open a console in the cloned repository and enter `sbt assembly`.
 This command will build the jar files and put them all into the folder `target/jars/`.
