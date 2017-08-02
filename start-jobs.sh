@@ -1,6 +1,6 @@
 #paths to kafka and flink. Please adapt according to your configuration.
-FLINK_PATH=/home/kafka/flink/flink-1.1.3
-KAFKA_PATH=/home/kafka/kafka
+FLINK_PATH=/opt/flink
+KAFKA_PATH=/opt/kafka
 
 #start kafka and flink. If both are already running, comment out this section
 #Please note that for this part admin rights are necessary to start them.
