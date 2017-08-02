@@ -1,8 +1,8 @@
 #!/bin/sh
 
 #paths to kafka and flink. Please adapt according to your configuration.
-FLINK_PATH=/home/kafka/flink/flink-1.1.3
-KAFKA_PATH=/home/kafka/kafka
+FLINK_PATH=/opt/flink
+KAFKA_PATH=/opt/kafka
 
 "$KAFKA_PATH"/bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic marketSituation
 "$KAFKA_PATH"/bin/kafka-topics.sh --delete --zookeeper localhost:2181 --topic cumulativeRevenueBasedMarketshare

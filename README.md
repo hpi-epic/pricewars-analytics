@@ -49,6 +49,8 @@ Then for each service, select your jar file and click on submit.
 The second way is to use the command line.
 Start a new job just with `path/to/flink/bin/flink run path/to/repository/target/jars/NameOfService.jar`.
 
+In case you use a standalone machine and not the docker setup, please make sure to install the components in `/opt/` or `ln -s` them like `cd /opt && ln -s $path/to/kafka$ kafka`
+
 ## Configuration
 
 The flink services need the url of the KAFKA log, which can be found (and - if necessary - updated) in the `application.conf` files in the `resources/` folder of each service's project path.
