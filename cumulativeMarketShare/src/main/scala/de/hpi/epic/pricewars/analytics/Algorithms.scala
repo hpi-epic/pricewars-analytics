@@ -19,27 +19,11 @@ object Algorithms {
   private implicit val mapTypeInfo = TypeInformation.of(classOf[Map[Token, Double]])
   private implicit val marketshareEntryTypeInfo = TypeInformation.of(classOf[MarketshareEntry])
 
-  def kumulativeMarketshare[T <: MarketshareInputT](dataStream: DataStream[T], time: Time = Time.minutes(1),
-                            amountCalculation: T => Double = (e:T) => e.amount.toDouble): DataStream[MarketshareEntry] = {
+  def cumulativeMarketshare[T <: MarketshareInputT](dataStream: DataStream[T], time: Time = Time.minutes(1),
+                                                    amountCalculation: T => Double = (e: T) => e.amount.toDouble): DataStream[MarketshareEntry] = {
     val windowedStream = dataStream.windowAll(GlobalWindows.create())
     val triggeredStream = windowedStream.trigger(ContinuousProcessingTimeTrigger.of(time))
     val aggregatedStream = triggeredStream.fold(Map.empty[Token, Double])((p, c) => {
-      p.get(c.merchant_id) match {
-        case Some(value) => p + (c.merchant_id -> (value + amountCalculation(c)))
-        case None => p + (c.merchant_id -> amountCalculation(c))
-      }
-    })
-    val expandedStream = aggregatedStream.flatMap(map => {
-      val globalSum = map.values.sum
-      map.toSeq.map(t => MarketshareEntry(t._1, t._2 / globalSum, new DateTime()))
-    })
-    expandedStream
-  }
-
-  def intervallMarketshare[T <: MarketshareInputT](dataStream: DataStream[T], time: Time = Time.minutes(1),
-                           amountCalculation: T => Double = (e:T) => e.amount.toDouble): DataStream[MarketshareEntry] = {
-    val windowedStream = dataStream.timeWindowAll(time)
-    val aggregatedStream = windowedStream.fold(Map.empty[Token, Double])((p,c) => {
       p.get(c.merchant_id) match {
         case Some(value) => p + (c.merchant_id -> (value + amountCalculation(c)))
         case None => p + (c.merchant_id -> amountCalculation(c))

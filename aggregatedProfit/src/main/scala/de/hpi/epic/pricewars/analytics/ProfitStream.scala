@@ -5,10 +5,10 @@ import org.apache.flink.streaming.api.scala.DataStream
 import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.joda.time.DateTime
-
-import de.hpi.epic.pricewars.types.{Currency, Timestamp, Token}
+import de.hpi.epic.pricewars.types.{Currency, Token}
 import de.hpi.epic.pricewars.logging.base.{MerchantIDEntry, TimestampEntry, ValueEntry}
-import de.hpi.epic.pricewars.logging.flink.{ExpensesEntry, ProfitEntry, RevenueEntry}
+import de.hpi.epic.pricewars.logging.flink.{ProfitEntry, RevenueEntry}
+import de.hpi.epic.pricewars.logging.producer.Order
 
 /**
   * Created by Jan on 31.01.2017.
@@ -33,7 +33,7 @@ object ProfitStream {
     *           for merchant_id, value with type Currency and timestamp
     * @return returns a stream that contains elements of type ProfitEntry
     */
-  private def conv[A,B <: EntryT](in: DataStream[A])(implicit ev: A => B): DataStream[ProfitEntry] = {
+  private def convert[A,B <: EntryT](in: DataStream[A])(implicit ev: A => B): DataStream[ProfitEntry] = {
     in.map(t => ProfitEntry.from(ev(t)))
   }
 
@@ -49,14 +49,13 @@ object ProfitStream {
     * @param windowSize the time span which should be used for the aggregation
     * @param windowSlide the time span after which the sliding window moves
     * @param transformA implicit function that provides a transformation from type A into type RevenueEntry
-    * @param transformB implicit function that provides a transformation from type B into type ExpensesEntry
+    * @param transformB implicit function that provides a transformation from type Order into type ProfitEntry
     * @tparam A some arbitrary type that the values of stream revenueStream have. Should represent the earnings.
-    * @tparam B some arbitrary type that the values of stream expensesStream have. Should represent the expenses.
     * @return stream that has the aggregated profit (earnings - expenses) per merchant in the specified time span
     */
-  def apply[A, B](revenueStream: DataStream[A], expensesStream: DataStream[B], windowSize: Time,
-            windowSlide: Time)(implicit transformA: A => RevenueEntry, transformB: B => ExpensesEntry): DataStream[ProfitEntry] = {
-    profitImpl(conv(revenueStream), conv(expensesStream), windowSize, windowSlide)
+  def apply[A](revenueStream: DataStream[A], expensesStream: DataStream[Order], windowSize: Time,
+            windowSlide: Time)(implicit transformA: A => RevenueEntry, transformB: Order => ProfitEntry): DataStream[ProfitEntry] = {
+    profitImpl(convert(revenueStream), convert(expensesStream), windowSize, windowSlide)
   }
 
   /**

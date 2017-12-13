@@ -1,10 +1,11 @@
-package de.hpi.epic.pricewars.logging
+package de.hpi.epic.pricewars.logging.marketplace
 
-import de.hpi.epic.pricewars.logging.marketplace.MarketshareEntry
 import org.apache.flink.streaming.util.serialization.{AbstractDeserializationSchema, SerializationSchema}
 import org.json4s.Formats
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization._
+
+import de.hpi.epic.pricewars.logging.MyDateTimeSerializer
 
 object MarketShareEntrySchema extends AbstractDeserializationSchema[MarketshareEntry] with SerializationSchema[MarketshareEntry] {
   override def deserialize(message: Array[Byte]): MarketshareEntry = {

@@ -1,23 +1,24 @@
 package de.hpi.epic.pricewars.analytics
 
-import com.typesafe.config.ConfigFactory
+import java.util.Properties
+
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkKafkaProducer09}
-import de.hpi.epic.pricewars.logging.{BuyOfferEntrySchema, MarketShareEntrySchema, NewProductEntrySchema}
-import de.hpi.epic.pricewars.logging.marketplace.{BuyOfferEntry, MarketshareEntry}
+import de.hpi.epic.pricewars.logging.marketplace.{BuyOfferEntry, BuyOfferEntrySchema, MarketShareEntrySchema, MarketshareEntry}
 import de.hpi.epic.pricewars.config._
 import de.hpi.epic.pricewars.analytics.Algorithms._
 import de.hpi.epic.pricewars.logging.flink.MarketshareInputEntry
-import de.hpi.epic.pricewars.logging.producer.NewProductEntry
+import de.hpi.epic.pricewars.logging.producer.{Order, OrderSchema}
 
 /**
   * Created by Jan on 06.12.2016.
   */
 object MarketShare {
-  val config = ConfigFactory.load
-  val properties = propsFromConfig(config.getConfig("kafka.cluster"))
-  val clientIdPrefix = config.getString("kafka.clientId.prefix")
+  val config: Config = ConfigFactory.load
+  val properties: Properties = propsFromConfig(config.getConfig("kafka.cluster"))
+  val clientIdPrefix: String = config.getString("kafka.clientId.prefix")
 
   def main(args: Array[String]): Unit = {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
@@ -29,16 +30,16 @@ object MarketShare {
         properties withClientId clientIdPrefix
       ))
 
-    val producedProductStream = env.addSource(
-      new FlinkKafkaConsumer09[NewProductEntry](
+    val orderStream = env.addSource(
+      new FlinkKafkaConsumer09[Order](
         config.getString("kafka.topic.source.produce"),
-        NewProductEntrySchema,
+        OrderSchema,
         properties withClientId clientIdPrefix
       )
     )
 
     val filteredBuyOfferStream = buyOfferStream.filter(_.http_code == 200)
-    val mergedStream = filteredBuyOfferStream.connect(producedProductStream).map(
+    val mergedStream = filteredBuyOfferStream.connect(orderStream).map(
       MarketshareInputEntry.from,
       MarketshareInputEntry.from
     )
@@ -62,25 +63,10 @@ object MarketShare {
     intervals.foreach(t => {
       val (extension, time) = t
       val marketShareStream =
-        if (amountCalculation.isDefined) kumulativeMarketshare[T](stream, time, amountCalculation.get)
-        else kumulativeMarketshare(stream, time)
+        if (amountCalculation.isDefined) cumulativeMarketshare[T](stream, time, amountCalculation.get)
+        else cumulativeMarketshare(stream, time)
       marketShareStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
         config.getString("kafka.topic.target.cumulative." + topic) + extension,
-        MarketShareEntrySchema,
-        properties withClientId clientIdPrefix
-      ))
-    })
-  }
-
-  def setupIntervalMarketShare[T <: MarketshareInputT](stream: DataStream[T], topic: String, intervals: Seq[(String, Time)],
-                                                       amountCalculation: Option[T => Double] = None): Unit = {
-    intervals.foreach(t => {
-      val (extension, time) = t
-      val marketShareStream =
-        if (amountCalculation.isDefined) intervallMarketshare[T](stream, time, amountCalculation.get)
-        else intervallMarketshare(stream, time)
-      marketShareStream.addSink(new FlinkKafkaProducer09[MarketshareEntry](
-        config.getString("kafka.topic.target.interval." + topic) + extension,
         MarketShareEntrySchema,
         properties withClientId clientIdPrefix
       ))

@@ -2,14 +2,11 @@ package de.hpi.epic.pricewars.analytics
 
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkKafkaProducer09}
-import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
 import de.hpi.epic.pricewars.config._
-import de.hpi.epic.pricewars.logging.{BuyOfferEntrySchema, NewProductEntrySchema}
-import de.hpi.epic.pricewars.logging.marketplace.BuyOfferEntry
-import de.hpi.epic.pricewars.logging.producer.NewProductEntry
-import org.apache.flink.api.java.utils.ParameterTool
+import de.hpi.epic.pricewars.logging.marketplace.{BuyOfferEntry, BuyOfferEntrySchema}
+import de.hpi.epic.pricewars.logging.producer.{Order, OrderSchema}
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.ContinuousProcessingTimeTrigger
@@ -27,10 +24,10 @@ object MerchantStatistics {
     val properties = propsFromConfig(config.getConfig("kafka.cluster"))
     val clientIdPrefix = config.getString("kafka.clientId.prefix")
 
-    val newProductStream = env.addSource(
-      new FlinkKafkaConsumer09[NewProductEntry](
+    val orderStream = env.addSource(
+      new FlinkKafkaConsumer09[Order](
         config.getString("kafka.topic.source.produce"),
-        NewProductEntrySchema,
+        OrderSchema,
         properties withClientId clientIdPrefix
       ))
     val buyOfferStream = env.addSource(
@@ -40,7 +37,7 @@ object MerchantStatistics {
         properties withClientId clientIdPrefix
       ))
 
-    val expensesStream = newProductStream.map(e => (e.merchant_id, e.amount * e.price * -1)).keyBy(0)
+    val expensesStream = orderStream.map(e => (e.merchant_id, -1 * e.billing_amount)).keyBy(0)
     val earningsStream = buyOfferStream.filter(e => e.http_code == 200).map(e => (e.merchant_id, e.amount * e.price))
     expensesStream.union(earningsStream)
                                       .keyBy(0)

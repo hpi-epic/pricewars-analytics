@@ -1,9 +1,10 @@
-package de.hpi.epic.pricewars.logging
+package de.hpi.epic.pricewars.logging.marketplace
 
-import de.hpi.epic.pricewars.logging.marketplace.BuyOfferEntry
 import org.apache.flink.streaming.util.serialization.AbstractDeserializationSchema
 import org.json4s.Formats
 import org.json4s.native.JsonMethods._
+
+import de.hpi.epic.pricewars.logging.MyDateTimeSerializer
 
 /**
   * Created by Jan on 07.02.2017.

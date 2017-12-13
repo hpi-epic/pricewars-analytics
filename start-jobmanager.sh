@@ -11,11 +11,9 @@ PID_JOBMANAGER=$!
 /analytics/wait-for-it.sh flink-jobmanager:6123 -t 0
 /analytics/wait-for-it.sh flink-taskmanager:6121 -t 0
 
-for file in /analytics/*; do
-    if [ "${file}" != "${file%.jar}" ];then
-        echo "Adding $file as flink job..."
-        /opt/flink/bin/flink run -d $file
-    fi
+for file in /analytics/target/jars/*; do
+    echo "Adding $file as flink job..."
+    /opt/flink/bin/flink run -d $file
 done
 
 wait $PID_JOBMANAGER
