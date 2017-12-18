@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkKafkaProducer09}
 import de.hpi.epic.pricewars.config.{propsFromConfig, propsWithClientId}
-import de.hpi.epic.pricewars.logging.flink.{ProfitEntrySchema, RevenueEntrySchema}
+import de.hpi.epic.pricewars.logging.flink._
 import de.hpi.epic.pricewars.logging.marketplace.{BuyOfferEntry, BuyOfferEntrySchema}
 import de.hpi.epic.pricewars.logging.producer.{Order, OrderSchema}
 
@@ -29,23 +29,33 @@ object SlidingWindowAggregations {
       config.getString("kafka.topic.source.buy"), BuyOfferEntrySchema, properties withClientId clientIdPrefix
     )).filter(_.http_code == 200).name("marketplace stream")
 
-    //log every 10 seconds profit [basically: amount * (selling_price - purchase_price)] of last 60 seconds
-    ProfitStream(buyOfferStream, orderStream, Time.minutes(1), Time.seconds(10))
+    val holdingCostStream = env.addSource(new FlinkKafkaConsumer09[HoldingCostEntry](
+      "holding_cost", HoldingCostEntrySchema, properties withClientId clientIdPrefix
+    ))
+
+    val earningsStream = buyOfferStream.filter(e => e.http_code == 200).map(e => RevenueEntry.toRevenueEntry(e))
+    val profitStream =
+      orderStream.map(e => ProfitEntry.from(e))
+        .union(earningsStream.map(t => ProfitEntry.from(t)))
+        .union(holdingCostStream.map(t => ProfitEntry.from(t)))
+
+    //log every 10 seconds profit of last 60 seconds
+    ProfitStream(profitStream, Time.minutes(1), Time.seconds(10))
       .addSink(new FlinkKafkaProducer09(config.getString("kafka.topic.target.profitPerMinute"),ProfitEntrySchema,properties withClientId clientIdPrefix))
       .name("profit per minute")
 
     //log every 1 minute profit of the last hour
-    ProfitStream(buyOfferStream, orderStream, Time.hours(1), Time.minutes(1))
+    ProfitStream(profitStream, Time.hours(1), Time.minutes(1))
       .addSink(new FlinkKafkaProducer09(config.getString("kafka.topic.target.profitPerHour"), ProfitEntrySchema, properties withClientId clientIdPrefix))
       .name("profit per hour")
 
-    //log every 10 seconds revenue [basically: amount * selling_price] of last 60 seconds
-    RevenueStream(buyOfferStream, Time.minutes(1), Time.seconds(10))
+    //log every 10 seconds revenue of last 60 seconds
+    RevenueStream(earningsStream, Time.minutes(1), Time.seconds(10))
       .addSink(new FlinkKafkaProducer09(config.getString("kafka.topic.target.revenuePerMinute"), RevenueEntrySchema, properties withClientId clientIdPrefix))
       .name("revenue per minute")
 
     //log every minute revenue of the last hour
-    RevenueStream(buyOfferStream, Time.hours(1), Time.minutes(1))
+    RevenueStream(earningsStream, Time.hours(1), Time.minutes(1))
       .addSink(new FlinkKafkaProducer09(config.getString("kafka.topic.target.revenuePerHour"), RevenueEntrySchema, properties withClientId clientIdPrefix))
       .name("revenue per hour")
 
