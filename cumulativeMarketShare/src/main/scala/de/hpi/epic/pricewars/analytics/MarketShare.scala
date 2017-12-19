@@ -9,8 +9,6 @@ import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkK
 import de.hpi.epic.pricewars.logging.marketplace.{BuyOfferEntry, BuyOfferEntrySchema, MarketShareEntrySchema, MarketshareEntry}
 import de.hpi.epic.pricewars.config._
 import de.hpi.epic.pricewars.analytics.Algorithms._
-import de.hpi.epic.pricewars.logging.flink.MarketshareInputEntry
-import de.hpi.epic.pricewars.logging.producer.{Order, OrderSchema}
 
 /**
   * Created by Jan on 06.12.2016.
@@ -30,19 +28,7 @@ object MarketShare {
         properties withClientId clientIdPrefix
       ))
 
-    val orderStream = env.addSource(
-      new FlinkKafkaConsumer09[Order](
-        config.getString("kafka.topic.source.produce"),
-        OrderSchema,
-        properties withClientId clientIdPrefix
-      )
-    )
-
     val filteredBuyOfferStream = buyOfferStream.filter(_.http_code == 200)
-    val mergedStream = filteredBuyOfferStream.connect(orderStream).map(
-      MarketshareInputEntry.from,
-      MarketshareInputEntry.from
-    )
 
     val intervals = Seq(
       ("", Time.minutes(1)),
@@ -51,8 +37,7 @@ object MarketShare {
     )
 
     setupCumulativeMarketShare(filteredBuyOfferStream, "amount", intervals)
-    setupCumulativeMarketShare[BuyOfferEntry](filteredBuyOfferStream, "turnover", intervals, Some((e) => (e.amount * e.price).toDouble))
-    setupCumulativeMarketShare(mergedStream, "revenue", intervals)
+    setupCumulativeMarketShare[BuyOfferEntry](filteredBuyOfferStream, "revenue", intervals, Some((e) => (e.amount * e.price).toDouble))
 
     env.execute("Cumulative aggregation of market share")
   }

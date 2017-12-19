@@ -19,7 +19,7 @@ object Algorithms {
   private implicit val mapTypeInfo = TypeInformation.of(classOf[Map[Token, Double]])
   private implicit val marketshareEntryTypeInfo = TypeInformation.of(classOf[MarketshareEntry])
 
-  def cumulativeMarketshare[T <: MarketshareInputT](dataStream: DataStream[T], time: Time = Time.minutes(1),
+  def cumulativeMarketshare[T <: MarketshareInputT](dataStream: DataStream[T], time: Time,
                                                     amountCalculation: T => Double = (e: T) => e.amount.toDouble): DataStream[MarketshareEntry] = {
     val windowedStream = dataStream.windowAll(GlobalWindows.create())
     val triggeredStream = windowedStream.trigger(ContinuousProcessingTimeTrigger.of(time))

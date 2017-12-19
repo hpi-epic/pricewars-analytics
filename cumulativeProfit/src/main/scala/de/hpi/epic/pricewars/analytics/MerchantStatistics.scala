@@ -4,7 +4,7 @@ import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkKafkaProducer09}
 import com.typesafe.config.ConfigFactory
 import de.hpi.epic.pricewars.config._
-import de.hpi.epic.pricewars.logging.flink.{ProfitEntry, ProfitEntrySchema}
+import de.hpi.epic.pricewars.logging.flink.{HoldingCostEntry, HoldingCostEntrySchema, ProfitEntry, ProfitEntrySchema}
 import de.hpi.epic.pricewars.logging.marketplace.{BuyOfferEntry, BuyOfferEntrySchema}
 import de.hpi.epic.pricewars.logging.producer.{Order, OrderSchema}
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
@@ -35,10 +35,18 @@ object MerchantStatistics {
         BuyOfferEntrySchema,
         properties withClientId clientIdPrefix
       ))
+    val holdingCostStream = env.addSource(
+      new FlinkKafkaConsumer09[HoldingCostEntry](
+        "holding_cost",
+        HoldingCostEntrySchema,
+        properties withClientId clientIdPrefix
+    ))
 
-    val expensesStream = orderStream.map(e => ProfitEntry.from(e))
     val earningsStream = buyOfferStream.filter(e => e.http_code == 200).map(e => ProfitEntry.from(e))
-    expensesStream.union(earningsStream)
+
+    earningsStream
+      .union(orderStream.map(e => ProfitEntry.from(e)))
+      .union(holdingCostStream.map(e => ProfitEntry.from(e)))
       .keyBy("merchant_id")
       .window(GlobalWindows.create())
       .trigger(ContinuousProcessingTimeTrigger.of(Time.minutes(1)))
