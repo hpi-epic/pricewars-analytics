@@ -1,4 +1,4 @@
-FROM hseeberger/scala-sbt:latest
+FROM hseeberger/scala-sbt:8u141-jdk_2.12.3_0.13.16
 
 ENV APP_HOME /analytics
 RUN mkdir $APP_HOME
