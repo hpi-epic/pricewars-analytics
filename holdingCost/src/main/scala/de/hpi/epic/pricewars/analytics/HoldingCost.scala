@@ -5,7 +5,7 @@ import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkK
 import com.typesafe.config.ConfigFactory
 import de.hpi.epic.pricewars.config._
 import de.hpi.epic.pricewars.logging.flink.{HoldingCostEntry, HoldingCostEntrySchema}
-import de.hpi.epic.pricewars.logging.marketplace.{BuyOfferEntry, BuyOfferEntrySchema, HoldingCostRateEntry, HoldingCostRateEntrySchema}
+import de.hpi.epic.pricewars.logging.marketplace._
 import de.hpi.epic.pricewars.logging.producer.{Order, OrderSchema}
 import de.hpi.epic.pricewars.types.{Amount, Currency, Timestamp, Token}
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
@@ -13,8 +13,6 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
 import org.joda.time.DateTime
 import org.joda.time.Duration
-
-case class InventoryLevel(merchant_id: Token, level: Amount, timestamp: Timestamp)
 
 object HoldingCost {
   def main(args: Array[String]): Unit = {
@@ -46,6 +44,12 @@ object HoldingCost {
       .keyBy("merchant_id")
       .reduce((t1, t2) => InventoryLevel(t1.merchant_id, t1.level + t2.level,
         if (t1.timestamp.isAfter(t2.timestamp)) t1.timestamp else t2.timestamp))
+
+    inventoryLevelStream.addSink(new FlinkKafkaProducer09(
+      "inventory_level",
+      InventoryLevelSchema,
+      properties withClientId clientIdPrefix
+    ))
 
     val rates = env.addSource(
       new FlinkKafkaConsumer09[HoldingCostRateEntry](
