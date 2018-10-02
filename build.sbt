@@ -1,8 +1,8 @@
-lazy val root = ( project in file(".") )
+lazy val analytics = ( project in file(".") )
    .aggregate(common, aggregatedProfit, cumulativeProfit, cumulativeMarketShare, holdingCost)
 
 val versions = new {
-  def flink = "1.1.3"
+  def flink = "1.6.0"
   def json = "3.5.0"
   def jodaTime = "2.9.6"
 }
