@@ -35,7 +35,7 @@ object HoldingCost {
         properties withClientId clientIdPrefix
       ))
 
-    val fillingStream = orderStream.map(e => InventoryLevel(e.merchant_id, e.amount, e.timestamp))
+    val fillingStream = orderStream.map(e => InventoryLevel(e.merchant_id, e.quantity, e.timestamp))
     val emptyingStream = saleStream
       .filter(e => e.http_code == 200)
       .map(e => InventoryLevel(e.merchant_id, -1 * e.amount, e.timestamp))

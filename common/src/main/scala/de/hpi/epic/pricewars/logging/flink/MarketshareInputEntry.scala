@@ -11,5 +11,5 @@ class MarketshareInputEntry(val merchant_id: Token, val amount: Amount) extends 
 
 object MarketshareInputEntry {
   def from(entry: BuyOfferEntry): MarketshareInputEntry = new MarketshareInputEntry(entry.merchant_id, entry.amount)
-  def from(entry: Order): MarketshareInputEntry = new MarketshareInputEntry(entry.merchant_id, entry.amount)
+  def from(order: Order): MarketshareInputEntry = new MarketshareInputEntry(order.merchant_id, order.quantity)
 }

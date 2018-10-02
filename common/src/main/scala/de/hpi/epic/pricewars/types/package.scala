@@ -7,6 +7,7 @@ import org.joda.time.DateTime
   */
 package object types {
   type Amount = Int
+  type Quantity = Int
   type Currency = BigDecimal
   type HttpCode = Int
   type ID = Long
