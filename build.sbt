@@ -4,7 +4,6 @@ lazy val analytics = ( project in file(".") )
 val versions = new {
   def flink = "1.6.0"
   def json = "3.5.0"
-  def jodaTime = "2.9.6"
 }
 
 lazy val common = (project in file("common")).settings(
@@ -14,7 +13,6 @@ lazy val common = (project in file("common")).settings(
   libraryDependencies ++= Seq(
     "org.json4s" %% "json4s-native" % versions.json,
     "org.json4s" %% "json4s-jackson" % versions.json,
-    "joda-time" % "joda-time" % versions.jodaTime,
     "com.typesafe" % "config" % "1.3.1",
     "org.json4s" %% "json4s-ext" % versions.json,
     "org.apache.flink" %% "flink-streaming-scala" % versions.flink % "provided")

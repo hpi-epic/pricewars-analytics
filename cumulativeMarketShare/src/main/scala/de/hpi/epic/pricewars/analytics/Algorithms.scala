@@ -1,5 +1,7 @@
 package de.hpi.epic.pricewars.analytics
 
+import java.time.ZonedDateTime
+
 import de.hpi.epic.pricewars.logging.base.{AmountEntry, MerchantIDEntry}
 import de.hpi.epic.pricewars.logging.marketplace.MarketshareEntry
 import de.hpi.epic.pricewars.types.Token
@@ -8,7 +10,6 @@ import org.apache.flink.streaming.api.scala.DataStream
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.ContinuousProcessingTimeTrigger
-import org.joda.time.DateTime
 
 
 /**
@@ -31,7 +32,7 @@ object Algorithms {
     })
     val expandedStream = aggregatedStream.flatMap(map => {
       val globalSum = map.values.sum
-      map.toSeq.map(t => MarketshareEntry(t._1, t._2 / globalSum, new DateTime()))
+      map.toSeq.map(t => MarketshareEntry(t._1, t._2 / globalSum, ZonedDateTime.now()))
     })
     expandedStream
   }

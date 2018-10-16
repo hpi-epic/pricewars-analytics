@@ -1,5 +1,7 @@
 package de.hpi.epic.pricewars.analytics
 
+import java.time.{Duration, ZonedDateTime}
+
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkKafkaProducer09}
 import com.typesafe.config.ConfigFactory
@@ -7,12 +9,10 @@ import de.hpi.epic.pricewars.config._
 import de.hpi.epic.pricewars.logging.flink.{HoldingCostEntry, HoldingCostEntrySchema}
 import de.hpi.epic.pricewars.logging.marketplace._
 import de.hpi.epic.pricewars.logging.producer.{Order, OrderSchema}
-import de.hpi.epic.pricewars.types.{Amount, Currency, Timestamp, Token}
+import de.hpi.epic.pricewars.types.{Amount, Currency, Token}
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.co.RichCoMapFunction
-import org.joda.time.DateTime
-import org.joda.time.Duration
 
 object HoldingCost {
   def main(args: Array[String]): Unit = {
@@ -74,14 +74,14 @@ object HoldingCost {
 
 class HoldingCostFunction extends RichCoMapFunction[InventoryLevel, HoldingCostRateEntry, HoldingCostEntry] {
   private var holding_cost_rate: ValueState[Currency] = _
-  private var last_timestamp: ValueState[DateTime] = _
+  private var last_timestamp: ValueState[ZonedDateTime] = _
   private var last_inventory_level: ValueState[Amount] = _
 
-  def holding_cost(merchant_id: Token, timestamp: DateTime) : HoldingCostEntry = {
+  def holding_cost(merchant_id: Token, timestamp: ZonedDateTime) : HoldingCostEntry = {
     var cost: Currency = 0
     if (last_timestamp.value() != null) {
-      val duration = new Duration(last_timestamp.value(), timestamp)
-      cost = last_inventory_level.value() * holding_cost_rate.value() * (duration.getMillis / (60 * 1000.0))
+      val duration = Duration.between(last_timestamp.value(), timestamp)
+      cost = last_inventory_level.value() * holding_cost_rate.value() * (duration.toMillis / (60 * 1000.0))
     }
     last_timestamp.update(timestamp)
     HoldingCostEntry(merchant_id, cost, timestamp)
@@ -104,7 +104,7 @@ class HoldingCostFunction extends RichCoMapFunction[InventoryLevel, HoldingCostR
       new ValueStateDescriptor[Currency]("holding cost rate", createTypeInformation[Currency], 0)
     )
     last_timestamp = getRuntimeContext.getState(
-      new ValueStateDescriptor[DateTime]("last timestamp", createTypeInformation[DateTime], null)
+      new ValueStateDescriptor[ZonedDateTime]("last timestamp", createTypeInformation[ZonedDateTime], null)
     )
     last_inventory_level = getRuntimeContext.getState(
       new ValueStateDescriptor[Amount]("last inventory level", createTypeInformation[Amount], 0)

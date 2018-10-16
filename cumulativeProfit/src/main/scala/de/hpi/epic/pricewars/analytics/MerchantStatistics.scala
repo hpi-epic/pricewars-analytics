@@ -1,5 +1,7 @@
 package de.hpi.epic.pricewars.analytics
 
+import java.time.ZonedDateTime
+
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer09, FlinkKafkaProducer09}
 import com.typesafe.config.ConfigFactory
@@ -10,7 +12,6 @@ import de.hpi.epic.pricewars.logging.producer.{Order, OrderSchema}
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.ContinuousProcessingTimeTrigger
-import org.joda.time.DateTime
 
 /**
   * Created by Jan on 29.11.2016.
@@ -48,7 +49,7 @@ object MerchantStatistics {
       .keyBy("merchant_id")
       .window(GlobalWindows.create())
       .trigger(ContinuousProcessingTimeTrigger.of(Time.minutes(1)))
-      .reduce((t1, t2) => new RevenueEntry(t1.merchant_id, t1.revenue + t2.revenue, new DateTime()))
+      .reduce((t1, t2) => new RevenueEntry(t1.merchant_id, t1.revenue + t2.revenue, ZonedDateTime.now()))
       .addSink(new FlinkKafkaProducer09(
         "cumulativeRevenue",
         RevenueEntrySchema,
@@ -61,7 +62,7 @@ object MerchantStatistics {
       .keyBy("merchant_id")
       .window(GlobalWindows.create())
       .trigger(ContinuousProcessingTimeTrigger.of(Time.minutes(1)))
-      .reduce((t1, t2) => new ProfitEntry(t1.merchant_id, t1.profit + t2.profit, new DateTime()))
+      .reduce((t1, t2) => new ProfitEntry(t1.merchant_id, t1.profit + t2.profit, ZonedDateTime.now()))
       .addSink(new FlinkKafkaProducer09(
         "profit",
         ProfitEntrySchema,

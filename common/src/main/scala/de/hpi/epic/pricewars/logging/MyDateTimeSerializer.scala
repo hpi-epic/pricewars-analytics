@@ -1,16 +1,15 @@
 package de.hpi.epic.pricewars.logging
 
-import org.joda.time.DateTime
-import org.json4s.JsonAST.{JNull, JString, JInt}
+import java.time.{Instant, ZoneOffset, ZonedDateTime}
+import java.time.format.DateTimeFormatter
+
+import org.json4s.JsonAST.{JInt, JNull, JString}
 import org.json4s.CustomSerializer
 
-
-case object MyDateTimeSerializer extends CustomSerializer[DateTime](format => ( {
-  case JString(s) => DateTime.parse(s)
-  case JInt(i) => new DateTime(i)
+case object MyDateTimeSerializer extends CustomSerializer[ZonedDateTime](_ => ( {
+  case JString(s) => ZonedDateTime.parse(s)
+  case JInt(i) => ZonedDateTime.ofInstant(Instant.ofEpochSecond(i.longValue()), ZoneOffset.UTC)
   case JNull => null
 }, {
-  case d: DateTime => JString(format.dateFormat.format(d.toDate))
-}
-)
-)
+  case d: ZonedDateTime => JString(d.format(DateTimeFormatter.ISO_INSTANT))
+}))
